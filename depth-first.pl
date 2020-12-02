@@ -1,144 +1,184 @@
 /*
- * solve_dfs(State,History,Moves)
- *   Moves es la secuencia de movidas requeridas para
- *   alcanzar un estado final deseado a partir de State.
- *   History contiene los estados previamente visitados.
- */
- 
-% Si el Estado actual es un estado final, no hay que moverse.
-solve_dfs(Estado,_,[]) :- final_state(Estado).
 
-/*
- * Si el Estado actual no es un estado final, genera una movida
- * para desplazarse a un nuevo estado, y continua la búsqueda a
- * partir de ese nuevo estado.
- */
-solve_dfs(Estado,Historia,[Movida|Movidas]) :-
-      move(Estado,Movida),               % generar una nueva Movida
-      update(Estado,Movida,Estado2),     % calcula nuevo estado usando Movida
-      legal(Estado2),                    % nuevo estado debe ser legal
-      not(member(Estado2,Historia)),     % debe ser primera vez que se llega al nuevo estado
-      solve_dfs(Estado2,[Estado2|Historia],Movidas).   % continuar a partir de nuevo estado
+Tarea Programada #2 Prolog
+Ignacio Alvarez Barrantes
+2019039643 
 
-/*
- * Inicializa un problema y lo resuelve.
- *   Problema: nombre del problema.
- *   Movidas: movidas requeridas para resolver el problema.
- */
-test_dfs(Problema,Movidas) :-
-      initial_state(Problema,Estado),      % obtener un Estado inicial dado Problema
-      solve_dfs(Estado,[Estado],Movidas).  % inicia resolución desde Estado
-
-/*
- * El problema del maíz, la fgallina y la zorra se identifica con el átomo zgm.
- * El estado tiene la siguiente estructura:
- *    zgm(PosicionBote, CosasEnRiveraIzquierda, CosasEnRiveraDerecha)
- * Las listas de ambas riveras deben estar ordenadas en la secuencia
- *    zorra, gallina, maiz
- * para evitar repetición de estados.
- */
-
-% En el estado incial el bote está a la izquierda, todas las cosas están en la
-% rivera izquierda y no hay nada a la derecha.
-initial_state(zgm,zgm(izq,[zorra,gallina,maiz],[])).
-
-% En el estado final el bote está a la derecha, todas las cosas están en la
-% rivera derecha y no hay nada a la izquierda.
-final_state(zgm(der,[],[zorra,gallina,maiz])).
-
-/* Move genera movidas a partir de un estado
- * Bote a la izquierda, tomar cualquier cosa que esté a la izquierda
- * Bote a la izquierda, tomar cualquier cosa que esté a la izquierda
- * Bote en cualquier rivera, el granjero se puede devolver solo
- */
-move(zgm(izq,I,_),Carga):-member(Carga,I).
-move(zgm(der,_,D),Carga):-member(Carga,D).
-move(zgm(_,_,_),solo).
-
-
-% Update actualiza un estado dada una movida.
-update(zgm(B,I,D),Carga,zgm(B1,I1,D1)):-
-      update_Bote(B,B1),                     % cambiar la rivera del bote
-      update_margenes(Carga,B,I,D,I1,D1).    % modificar riveras de acuerdo
-                                             % con lo transportado
-
-% Actualizar el bote es cambiarlo de una rivera a otra.
-update_Bote(izq,der).
-update_Bote(der,izq).
-
-
-/*
- * Actualizar las márgenes consiste en trasladar lo que fue transportado
- * en el bote quitándolo de la rivera dónde se tomó y poniéndolo en la otra.
- *
- * update_margenes(Movida, RiveraIzquierdaVieja, RiveraDerechaVieja,
- *                         RiveraIzquierdaNueva, RiveraDerechaNueva)
- */
-% Si no se trasladó nada,
-%     no importa dónde estaba el bote, las riveras quedan igual
-update_margenes(solo,_,I,D,I,D). % No hay cambio porque no se trasladó nada.
-
-% Bote arrancó de la izquierda, trasladar cosa de izquierda a derecha.
-update_margenes(Carga,izq,I,D,I1,D1):-
-      select(Carga,I,I1),        % Quita de la rivera izquierda lo trasladado
-      insert(Carga,D,D1).        % Inserta lo trasladado en la rivera derecha
-
-% Bote arrancó de la izquierda, trasladar cosa de izquierda a derecha.
-update_margenes(Carga,der,I,D,I1,D1):-
-      select(Carga,D,D1),        % Quita de la rivera derecha lo trasladado
-      insert(Carga,I,I1).        % Inserta lo trasladado en la rivera izquierda
-
-
-/*
- * insert(ElementoInsertado, ListaVieja, ListaNueva)
- *
- * Inserta en orden una de las cosas en una lista.
- * La relación precedes/2 establece el orden de las cosas: z < g < m.
- */
-insert(X,[Y|Ys],[X,Y|Ys]):-precedes(X,Y).   % Elemento va al inicio
-insert(X,[Y|Ys],[Y|Zs]):-precedes(Y,X),insert(X,Ys,Zs).  % Insertar más adentro.
-insert(X,[],[X]).                           % Insertar como único elemento.
-
-
-/*
- * select(Elemento, ListaQueContieneElemento, ListaSinElemento)
- *
- * Extrae no determisticamente un elemento de una lista que lo contiene
- * y obtiene la lista sin ese elemento.
- */
-select(X,[X|Xs],Xs).                          % Extrae primer elemento.
-select(X,[Y|Ys],[Y|Zs]):-select(X,Ys,Zs).     % Extrae elemento de más adentro.
-
-
-/*
- * Establece el ordenamiento z < g < m, requerido para mantener las
- * riveras ordenadas de modo que no se consideren distintos dos estados
- * simplemente porque son permutaciones del mismo conjunto.
- */
-
-/* Caso no determinístico.
-   Las cláusulas no son excluyentes:
-       ?-precedes(zorra,maiz).
-   genera dos veces la misma solución.
-*/
-% precedes(zorra,_).
-% precedes(_,maiz).
-
-/* Caso determinístico.
-   Las cláusulas son excluyentes,
-   nunca generan dos veces la misma solución.
 */
 
-precedes(zorra,gallina).
-precedes(zorra,maiz).
-precedes(gallina,maiz).
+%Valueble facts
+%assert(statement(x,y)) permite agregar statement
+%retract(statement(x,y)) elimina un statement
 
 
-% Se revisa la legalidad de la rivera en la que no está el granjero.
-legal(zgm(izq,_,D)):-not(ilegal(D)). % granjero a la izq., revisar rivera der.
-legal(zgm(der,I,_)):-not(ilegal(I)). % granjero a la der., revisar rivera izq.
+% Dynamic Statements:
+:- dynamic(crossTime/2). % CrossTime de una persona dada 
+:- dynamic(maxTime/1).   % Tiempo de vida Ãºtil de la linterna
+:- dynamic(maxBridge/1).  % MÃ¡ximo de personas que son capaces de cruzar a la vez
 
-% ilegal(Lista) indica si hay problemas
-ilegal(L):-member(zorra,L),member(gallina,L). %% z y g no pueden estar solos
-ilegal(L):-member(gallina,L),member(maiz,L).  %% g y m no pueden estar solos
 
+%----------------------------------------------------------------
+
+
+% Main Function:
+start :- 
+    addPerson("Y"), 
+    setTorchLimit,
+    setBridgeLimit,
+    setInitialState(InitState),
+    solve(InitState, [], Sol),
+    forall(member(X, Sol),
+    (write(X), nl)).
+    %reset.
+
+
+%----------------------------------------------------------------
+
+% Insert settings:
+
+%Loop incharge of inserting peopleÂ´s information
+addPerson("Y") :-
+    write("Enter the person name: "),
+    read(Name),
+    write("Enter crossing time: "),
+    read(Time),
+    assert(crossTime(Name, Time)),
+    write("Want to add more people? ('Y'/'N'): "),
+    read(X),
+    addPerson(X).
+
+addPerson("N").
+
+addPerson(_) :-
+    write("Unknown Command (Y/N): "),
+    read(X),
+    addPerson(X).
+
+
+%Loop incharge of inserting torch limit
+setTorchLimit :-
+    write("Set torchs time limit: "),
+    read(Time),
+    assert(maxTime(Time)).
+
+
+%Loop incharge of inserting bridge limit
+setBridgeLimit :-
+    write("Set bridges max capacity: "),
+    read(Torch),
+    assert(maxBridge(Torch)).
+
+
+%----------------------------------------------------------------
+
+%Set initial configuration for the bridge problem
+
+% Remove all settings
+reset :-
+    retractall(crossTime(_,_)),
+    retractall(maxTime(_)),
+    retractall(maxBridge(_)).
+
+% Sets the initial state for the bridge problem
+setInitialState([0, l, Names, []]) :-
+    findall(Name, crossTime(Name, _), Names).
+
+% Final state possible for the problem   
+final([_, r, [], _]).
+
+
+%----------------------------------------------------------------
+
+
+% Main logic for in depth bridge problem solution
+
+
+% Recursively checks if a path can be made through all node combinations
+solve(Node, Path, [Node|Path]) :- 
+    final(Node).
+solve(Node, Path, Sol) :- 
+    move(Node, Movement),
+    update(Node, Movement, NewNode),
+    legal(NewNode),
+    not(member(NewNode, Path)),
+    solve(NewNode, [Node|Path], Sol).
+
+
+% If the torch is on the left, calculate the max amount of crossers and generate all combs
+% If the torch is on the right, generate all combinations of 1 person
+move([_, l, Left, _], Movement) :-
+    getCrossers(Left, N),
+    comb(N, Left, Movement).
+move([_, r, _, Right], Movement) :-
+    comb(1, Right, Movement).
+
+
+% Moves people from one side to another and updates the total time based on the slowest
+update([Time1, l, Left1, Right1], Movement, [Time2, r, Left2, Right2]) :-
+    take(Movement, Left1, Left2),
+    append(Movement, Right1, Right2),
+    findTimes(Movement, Times),
+    maxList(Times, MaxTime),
+    Time2 is Time1 + MaxTime.
+update([Time1, r, Left1, Right1], Movement, [Time2, l, Left2, Right2]) :-
+    take(Movement, Right1, Right2),
+    append(Movement, Left1, Left2),
+    findTimes(Movement, Times),
+    maxList(Times, MaxTime),
+    Time2 is Time1 + MaxTime.
+
+
+% Checks if the total time is less than the max time
+legal([Time, _, _, _]) :-
+    maxTime(X),
+    Time =< X.
+
+
+% If there are more people than the max capacity, cross the max
+% If there are less people than the max capacity, cross them all
+getCrossers(Group, X) :-
+    maxBridge(N),
+    length(Group, Len),
+    Len >= N,
+    X is N.
+getCrossers(Group, X) :-
+    maxBridge(N),
+    length(Group, Len),
+    Len < N,
+    X is Len.
+
+
+% Generates an array with the times of a group of people
+findTimes([], []).
+findTimes([Name|People], [Time|CrsTimes]) :- 
+    crossTime(Name, Time),
+    findTimes(People, CrsTimes).
+
+
+%----------------------------------------------------------------
+
+% List manipulation functions
+
+% Generates all combinations of N elements in a list
+comb(N, List, X) :-
+    length(X, N),
+    mem1(X, List).
+
+mem1([], Y).
+mem1([H|T], Y) :- 
+    member(H, Y),
+    rest(H, Y, New),
+    mem1(T, New).
+
+rest(A, List, R) :- 
+    append(_, [A|R], List), !.
+
+% Removes the given elements from a list
+take(Elem, List, X) :- 
+    findall(Z, (member(Z, List), not(member(Z, Elem))), X).
+
+% Obtains the max number from a list
+maxList(List, M):- 
+    member(M, List), 
+    findall(X, (member(X, List), X > M), New),
+    length(New, 0).
