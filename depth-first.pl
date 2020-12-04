@@ -164,7 +164,8 @@ findTimes([Name|People], [Time|CrsTimes]) :-
 % Generates all combinations of N elements in a list
 comb(N, List, X) :-
     length(X, N),
-    mem1(X, List).
+    mem1(X, List),
+    
 
 mem1([], Y).
 mem1([H|T], Y) :- 

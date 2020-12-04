@@ -24,6 +24,8 @@ Unccoment this to initialize manually the problem
 
 Problem:
 */
+
+%Set Crossing Times
 crossTime(alberto,1).
 crossTime(beatriz,2).
 crossTime(carlos,5).
@@ -31,26 +33,25 @@ crossTime(dora,10).
 crossTime(emilio,15).
 %crossTime(julio,20).
 
+%Set Torch Duration
 torchLimit(28).
 
+%Set Bridge Max Capacity
 bridgeLimit(2).
 
 
 
-
 % Main function initializes the problem and proceeds to resolve it
-bridgeTorchDepth(Sol) :- 
+bridgeTorchHillClimbing() :- 
     %addPerson("Y"),
     %setTorchLimit,
     %setBridgeLimit,
     initial(InitState),
-    solve(InitState, [], Sol).
-    %writeln(" "),
-    %writeln("The first found solution was:"),
-    %writeln(" "),
-    %forall(member(X, Sol),
-    %(write(X), nl)),
-    %reset.
+    statistics(walltime, [TimeSinceStart | [TimeSinceLastCall]]),
+    solve(InitState, [], Sol),
+    statistics(walltime, [NewTimeSinceStart | [ExecutionTime]]),
+    forall(member(X, Sol), (write(X), nl)),
+    write('Execution took '), write(ExecutionTime), write(' ms.'), nl.
 
 %---------------------------------------------------------------------------------
 
@@ -99,15 +100,43 @@ final([_, r, [], _]).
 
 % Solving logic
 
-% Recursively checks if a path can be made through all node combinations
+% Recursively checks if a path can be made through all node combinations in order according to value
 solve(Node, Path, [Node|Path]) :- 
     final(Node).
 solve(Node, Path, Sol) :- 
-    move(Node, Movement),
+    hillClimb(Node, Movement),
     update(Node, Movement, NewNode),
     legal(NewNode),
     not(member(NewNode, Path)),
     solve(NewNode, [Node|Path], Sol).
+
+% Generates all node combinations from a node and orders them according to value
+hillClimb(Node, Movement) :-
+    findall(X, move(Node, X), Moves),
+    evaluateOrder(Node, Moves, [], OrderedMoves),
+    member((Movement, _), OrderedMoves).
+
+% Recursively evaluates all moves and orders the list by highest value
+evaluateOrder(_, [], Accumulated, Accumulated).
+evaluateOrder(Node, [Movement|Moves], Accumulated, OrderedMoves) :-
+    update(Node, Movement, NewNode),        
+    value(NewNode, Value),               
+    insertPair((Movement, Value), Accumulated, Z), 
+    evaluateOrder(Node, Moves, Z, OrderedMoves).
+
+% Inserts a tuple in an ordered list based on the second element
+insertPair(MV, [], [MV]).
+insertPair((M, V), [(M1, V1)|MVs], [(M, V), (M1, V1)|MVs]) :-
+    V >= V1.
+insertPair((M, V), [(M1, V1)|MVs], [(M1, V1)|MVs1]) :-
+    V < V1,
+    insertPair((M, V), MVs, MVs1).
+
+value([Time, l, _, _], Value) :-
+    torchLimit(T),
+    Value is T - Time.
+
+value([Time, r, Left, Right], 0).
 
 % If the torch is on the left, calculate the max amount of crossers and generate all combs
 % If the torch is on the right, generate all combinations of 1 person
