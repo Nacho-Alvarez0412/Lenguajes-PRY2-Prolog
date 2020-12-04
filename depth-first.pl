@@ -114,10 +114,9 @@ solve(Node, Path, Sol) :-
 % If the torch is on the left, calculate the max amount of crossers and generate all combs
 % If the torch is on the right, generate all combinations of 1 person
 move([_, l, Left, _], Movement) :-
-    crossers(Left, N),
-    comb(N, Left, Movement).
+    cross(Left,Movement).
 move([_, r, _, Right], Movement) :-
-    comb(1, Right, Movement).
+    cross(Right,Movement).
 
 % Moves people from one side to another and updates the total time based on the slowest
 update([Time1, l, Left1, Right1], Movement, [Time2, r, Left2, Right2]) :-
@@ -138,18 +137,12 @@ legal([Time, _, _, _]) :-
     torchLimit(X),
     Time =< X.
 
-% If there are more people than the max capacity, cross the max
-% If there are less people than the max capacity, cross them all
-crossers(Group, X) :-
+% Evaluates possible moves
+cross(Side,Move):-
     bridgeLimit(N),
-    length(Group, Len),
-    Len >= N,
-    X is N.
-crossers(Group, X) :-
-    bridgeLimit(N),
-    length(Group, Len),
-    Len < N,
-    X is Len.
+    between(1, N, Value),
+    comb(Value,Side,Move).
+    
 
 % Generates an array with the times of a group of people
 findTimes([], []).
@@ -164,8 +157,7 @@ findTimes([Name|People], [Time|CrsTimes]) :-
 % Generates all combinations of N elements in a list
 comb(N, List, X) :-
     length(X, N),
-    mem1(X, List),
-    
+    mem1(X, List).
 
 mem1([], Y).
 mem1([H|T], Y) :- 
@@ -175,7 +167,6 @@ mem1([H|T], Y) :-
 
 rest(A, List, R) :- 
     append(_, [A|R], List), !.
-
 % Removes the given elements from a list
 take(Elem, List, X) :- 
     findall(Z, (member(Z, List), not(member(Z, Elem))), X).
