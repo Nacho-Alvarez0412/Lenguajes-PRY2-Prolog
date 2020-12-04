@@ -6,7 +6,7 @@ Tarea Programada #2 Prolog
 Ignacio Alvarez Barrantes
 2019039643
 
-Depth-First Solution
+Hill-Climbing Solution
 
 
 */
@@ -24,8 +24,6 @@ Unccoment this to initialize manually the problem
 
 Problem:
 */
-
-%Set Crossing Times
 crossTime(alberto,1).
 crossTime(beatriz,2).
 crossTime(carlos,5).
@@ -33,26 +31,26 @@ crossTime(dora,10).
 crossTime(emilio,15).
 %crossTime(julio,20).
 
-%Set Torch Duration
 torchLimit(28).
 
-%Set Bridge Max Capacity
 bridgeLimit(2).
 
 
 
+
 % Main function initializes the problem and proceeds to resolve it
-bridgeTorchDepth() :- 
+bridgeTorchDepth(Sol) :- 
     %addPerson("Y"),
     %setTorchLimit,
     %setBridgeLimit,
     initial(InitState),
-    solve(InitState, [], Sol),
-    writeln(" "),
-    writeln("The  found solution was:"),
-    writeln(" "),
-    forall(member(X, Sol),
-    (write(X), nl)).
+    solve(InitState, [], Sol).
+    %writeln(" "),
+    %writeln("The first found solution was:"),
+    %writeln(" "),
+    %forall(member(X, Sol),
+    %(write(X), nl)),
+    %reset.
 
 %---------------------------------------------------------------------------------
 
