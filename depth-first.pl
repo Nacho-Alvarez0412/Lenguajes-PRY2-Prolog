@@ -12,12 +12,6 @@ Depth-First Solution
 */
 
 
-
-% Dynamic statements
-:- dynamic(crossTime/2).
-:- dynamic(torchLimit/1).
-:- dynamic(bridgeLimit/1).
-
 /*
 
 Unccoment this to initialize manually the problem
@@ -31,55 +25,27 @@ crossTime(beatriz,2).
 crossTime(carlos,5).
 crossTime(dora,10).
 crossTime(emilio,15).
-%crossTime(julio,20).
+crossTime(julio,20).
 
 %Set Torch Duration
-torchLimit(28).
+torchLimit(42).
 
 %Set Bridge Max Capacity
 bridgeLimit(2).
 
 
-
 % Main function initializes the problem and proceeds to resolve it
 bridgeTorchDepth() :- 
-    %addPerson("Y"),
-    %setTorchLimit,
-    %setBridgeLimit,
     initial(InitState),
+    statistics(walltime, [TimeSinceStart | [TimeSinceLastCall]]),
     solve(InitState, [], Sol),
+    statistics(walltime, [NewTimeSinceStart | [ExecutionTime]]),
     writeln(" "),
-    writeln("The  found solution was:"),
+    writeln("The found solution was:"),
     writeln(" "),
     forall(member(X, Sol),
-    (write(X), nl)).
-
-%---------------------------------------------------------------------------------
-
-% Configure the setting for the Bridge Problem Dynamically
-
-addPerson("Y") :-
-    write("Enter the persons name: "),
-    read(Name),
-    write("Enter the persons crossing speed: "),
-    read(Time),
-    assert(crossTime(Name, Time)),
-    write("Do you wish to add another person? ('Y'/'N'): "),
-    read(X),
-    addPerson(X).
-
-addPerson("N").
-
-
-setTorchLimit :-
-    write("Insert the torch time limit: "),
-    read(Time),
-    assert(torchLimit(Time)).
-
-setBridgeLimit :-
-    write("Insert the bridge max capacity: "),
-    read(Torch),
-    assert(bridgeLimit(Torch)).
+    (write(X), nl)),
+    write('Execution took '), write(ExecutionTime), write(' ms.'), nl.
 
 %---------------------------------------------------------------------------------
 
@@ -101,7 +67,7 @@ final([_, r, [], _]).
 
 % Solving logic
 
-% Recursively checks if a path can be made through all node combinations
+% Checks if path for achieving final state is possible
 solve(Node, Path, [Node|Path]) :- 
     final(Node).
 solve(Node, Path, Sol) :- 
@@ -111,14 +77,15 @@ solve(Node, Path, Sol) :-
     not(member(NewNode, Path)),
     solve(NewNode, [Node|Path], Sol).
 
-% If the torch is on the left, calculate the max amount of crossers and generate all combs
-% If the torch is on the right, generate all combinations of 1 person
+% If torch is in the left determines the max num of people that can be taken and generates the possible combinations
+% If torch is in the right creates al possible combinations of 1 element
 move([_, l, Left, _], Movement) :-
-    cross(Left,Movement).
+    cross(Left, N),
+    combinations(N, Left, Movement).
 move([_, r, _, Right], Movement) :-
-    cross(Right,Movement).
+    combinations(1,Right,Movement).
 
-% Moves people from one side to another and updates the total time based on the slowest
+% Moves based on the combinations selected and updates time of the slowest crosser
 update([Time1, l, Left1, Right1], Movement, [Time2, r, Left2, Right2]) :-
     take(Movement, Left1, Left2),
     append(Movement, Right1, Right2),
@@ -132,19 +99,16 @@ update([Time1, r, Left1, Right1], Movement, [Time2, l, Left2, Right2]) :-
     maxList(Times, MaxTime),
     Time2 is Time1 + MaxTime.
 
-% Checks if the total time is less than the max time
+% Checks if the visited node has a valid state
 legal([Time, _, _, _]) :-
     torchLimit(X),
     Time =< X.
 
-% Evaluates possible moves
-cross(Side,Move):-
-    bridgeLimit(N),
-    between(1, N, Value),
-    comb(Value,Side,Move).
-    
+% Creates a range from N to 1
+range(X, L, H) :- X is H - 1, X > L.
+range(X, L, H) :- H1 is H - 1, H1 > L, range(X, L, H1).
 
-% Generates an array with the times of a group of people
+% Determines the times of a certain group of people and appends it to a list
 findTimes([], []).
 findTimes([Name|People], [Time|CrsTimes]) :- 
     crossTime(Name, Time),
@@ -154,24 +118,39 @@ findTimes([Name|People], [Time|CrsTimes]) :-
 
 % List manipulation functions
 
-% Generates all combinations of N elements in a list
-comb(N, List, X) :-
-    length(X, N),
-    mem1(X, List).
+% If theres more people than the max capacity of the bridge tkaes the max capacity
+% If theres less people than the max, takes the remaining crossers
+cross(Group, X) :-
+    bridgeLimit(N),
+    length(Group, Len),
+    Len >= N,
+    X is N.
+cross(Group, X) :-
+    bridgeLimit(N),
+    length(Group, Len),
+    Len < N,
+    X is Len.
 
-mem1([], Y).
-mem1([H|T], Y) :- 
+% Generates all combinations of N elements in a list
+combinations(N, List, X) :-
+    length(X, N),
+    aux(X, List).
+
+% Cleans the combinations avoiding the existance of equivalent combs ([a,b] = [b,a])
+aux([], Y).
+aux([H|T], Y) :- 
     member(H, Y),
     rest(H, Y, New),
-    mem1(T, New).
+    aux(T, New).
 
 rest(A, List, R) :- 
     append(_, [A|R], List), !.
-% Removes the given elements from a list
+
+% Removes specific element from a list
 take(Elem, List, X) :- 
     findall(Z, (member(Z, List), not(member(Z, Elem))), X).
 
-% Obtains the max number from a list
+% Obtains the max in a list
 maxList(List, M):- 
     member(M, List), 
     findall(X, (member(X, List), X > M), New),
