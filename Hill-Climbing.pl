@@ -25,13 +25,13 @@ crossTime(beatriz,2).
 crossTime(carlos,5).
 crossTime(dora,10).
 crossTime(emilio,15).
-crossTime(julio,20).
+%crossTime(julio,20).
 
 %Set Torch Duration
-torchLimit(28).
+torchLimit(21).
 
 %Set Bridge Max Capacity
-bridgeLimit(2).
+bridgeLimit(3).
 
 
 
@@ -41,7 +41,11 @@ bridgeTorchHillClimbing() :-
     statistics(walltime, [TimeSinceStart | [TimeSinceLastCall]]),
     solve(InitState, [], Sol),
     statistics(walltime, [NewTimeSinceStart | [ExecutionTime]]),
-    forall(member(X, Sol), (write(X), nl)),
+    writeln(" "),
+    writeln("The found solution was:"),
+    writeln(" "),
+    forall(member(X, Sol),
+    (write(X), nl)),
     write('Execution took '), write(ExecutionTime), write(' ms.'), nl.
 
 %---------------------------------------------------------------------------------

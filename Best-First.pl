@@ -28,10 +28,10 @@ crossTime(emilio,15).
 %crossTime(julio,20).
 
 %Set Torch Duration
-torchLimit(28).
+torchLimit(21).
 
 %Set Bridge Max Capacity
-bridgeLimit(2).
+bridgeLimit(3).
 
 %---------------------------------------------------------------------------------
 
